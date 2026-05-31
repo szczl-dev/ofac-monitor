@@ -1,0 +1,5 @@
+# OFAC 制裁名单每日监控系统 - 依赖包
+# 安装方法: pip3 install -r requirements.txt
+
+requests>=2.28.0
+python-dotenv>=1.0.0

@@ -1,0 +1,39 @@
+# OFAC 制裁名单每日监控 - GitHub Actions 定时任务
+# 完全免费，无需电脑开机，GitHub 服务器每天自动执行
+
+name: OFAC 每日制裁监控
+
+on:
+  schedule:
+    # 每天北京时间 09:00 执行（UTC 01:00）
+    - cron: "0 1 * * *"
+  # 也支持手动触发（用于测试）
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 创建 .env 配置文件
+        run: |
+          cat > .env << 'EOF'
+          FEISHU_WEBHOOK_URL=${{ secrets.FEISHU_WEBHOOK_URL }}
+          DATA_DIR=./data
+          LOG_DIR=./logs
+          EOF
+
+      - name: 运行监控
+        run: python -m src.main run
