@@ -242,3 +242,151 @@ class Summarizer:
             lines.append(f"\n> ... 还有 {len(entities) - max_items} 条，完整列表见日志或数据库")
 
         return "\n".join(lines) + "\n"
+
+    # ==================== OFAC 官方 Recent Actions 摘要 ====================
+
+    def summarize_scraped_actions(
+        self,
+        new_actions: List[Dict],
+        check_date: str,
+        total_today: int,
+        seen_count: int,
+    ) -> str:
+        """
+        从 OFAC 官方 recent-actions 页面爬取的数据生成摘要
+
+        参数:
+          new_actions: 新发现的行动列表（含详情）
+          check_date: 检查日期
+          total_today: 今日页面总条数
+          seen_count: 已见过的条数
+        """
+        lines = []
+        lines.append(f"## 🏛️ OFAC 官方制裁行动日报\n")
+        lines.append(f"**数据来源**: [ofac.treasury.gov/recent-actions](https://ofac.treasury.gov/recent-actions)")
+        lines.append(f"**检测时间**: {check_date}")
+        lines.append(f"**页面总条数**: {total_today}  |  **🆕 新增**: {len(new_actions)} 条\n")
+        lines.append(f"---\n")
+
+        if not new_actions:
+            lines.append(f"✅ 本次检测未发现新的制裁行动。\n")
+            lines.append(f"> 最近 {total_today} 条行动均已记录，无更新。")
+            return "\n".join(lines)
+
+        # 按类别分组统计
+        categories = {}
+        for a in new_actions:
+            cat = a.get("category", "未分类")
+            categories[cat] = categories.get(cat, 0) + 1
+
+        lines.append(f"### 📈 本次新增行动概览\n")
+        lines.append(f"| 类别 | 数量 |")
+        lines.append(f"|------|------|")
+        for cat, count in sorted(categories.items(), key=lambda x: -x[1]):
+            cat_emoji = _category_emoji(cat)
+            lines.append(f"| {cat_emoji} {cat} | **{count}** |")
+        lines.append("")
+
+        # 逐条展示 — 使用预计算的中文摘要
+        for i, action in enumerate(new_actions, 1):
+            title = action.get("title", "N/A")
+            action_date = action.get("action_date", "")
+            category = action.get("category", "")
+            action_url = action.get("action_url", "")
+            full_url = f"https://ofac.treasury.gov{action_url}" if action_url else ""
+            cat_emoji = _category_emoji(category)
+            detail_summary = action.get("detail_summary", "")
+
+            lines.append(f"---\n")
+            lines.append(f"### {i}. {title}\n")
+            lines.append(f"📅 **{action_date}** | {cat_emoji} **{category}**")
+            if full_url:
+                lines.append(f"🔗 [OFAC 官方详情页]({full_url})")
+
+            # 使用从详情页解析的中文摘要
+            if detail_summary:
+                lines.append(f"\n{detail_summary}")
+            else:
+                # 回退：没有详情摘要时显示基本信息
+                press_url = action.get("press_release_url", "")
+                press_title = action.get("press_release_title", "")
+                if press_url:
+                    lines.append(f"📰 Treasury 新闻稿: [{press_title or '链接'}]({press_url})")
+                body_text = action.get("body_text", "")
+                if body_text:
+                    lines.append(f"\n> {body_text[:300]}...")
+                lines.append(f"\n⚠️ 详情解析失败，请点击上方链接查看完整内容")
+
+        # 页脚
+        lines.append(f"\n---\n")
+        lines.append(f"📌 数据来源: [OFAC Recent Actions](https://ofac.treasury.gov/recent-actions)")
+        lines.append(f"⏰ 检测时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} (UTC)")
+        lines.append(f"🤖 自动监控 · OFAC Monitor v2.0")
+
+        result = "\n".join(lines)
+        if len(result) > 15000:
+            result = result[:14900] + "\n\n> ⚠️ 内容过长已截断，请访问 [OFAC Recent Actions](https://ofac.treasury.gov/recent-actions) 查看完整内容"
+
+        return result
+
+    def summarize_new_actions_simple(
+        self,
+        new_actions: List[Dict],
+        check_date: str,
+    ) -> str:
+        """
+        简洁版摘要：仅列出新增行动的标题、日期和链接
+        适用于快速通知场景
+        """
+        lines = []
+        lines.append(f"## 🏛️ OFAC 新增制裁行动 ({len(new_actions)} 条)\n")
+        lines.append(f"**检测时间**: {check_date}\n")
+
+        for i, a in enumerate(new_actions, 1):
+            title = a.get("title", "N/A")
+            action_date = a.get("action_date", "")
+            category = a.get("category", "")
+            action_url = a.get("action_url", "")
+            full_url = f"https://ofac.treasury.gov{action_url}" if action_url else ""
+            cat_emoji = _category_emoji(category)
+            press_url = a.get("press_release_url", "")
+
+            lines.append(f"{i}. **{title}**")
+            lines.append(f"   📅 {action_date}  |  {cat_emoji} {category}")
+            if full_url:
+                lines.append(f"   🔗 [OFAC 详情]({full_url})")
+            if press_url:
+                lines.append(f"   📰 [Treasury 新闻稿]({press_url})")
+            lines.append("")
+
+        lines.append(f"---")
+        lines.append(f"📌 [OFAC Recent Actions](https://ofac.treasury.gov/recent-actions)")
+        lines.append(f"⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+        return "\n".join(lines)
+
+
+def _category_emoji(category: str) -> str:
+    """根据类别返回对应的 emoji"""
+    cat_lower = category.lower()
+    if "sanctions list" in cat_lower or "sdn" in cat_lower:
+        return "📋"
+    elif "enforcement" in cat_lower:
+        return "⚖️"
+    elif "general license" in cat_lower:
+        return "📜"
+    elif "regulation" in cat_lower or "guidance" in cat_lower:
+        return "📖"
+    elif "miscellaneous" in cat_lower or "other" in cat_lower:
+        return "📌"
+    elif "counter terrorism" in cat_lower:
+        return "🛡️"
+    elif "iran" in cat_lower:
+        return "🇮🇷"
+    elif "russia" in cat_lower:
+        return "🇷🇺"
+    elif "north korea" in cat_lower or "dprk" in cat_lower:
+        return "🇰🇵"
+    elif "cyber" in cat_lower:
+        return "💻"
+    return "📌"

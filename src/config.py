@@ -33,7 +33,11 @@ class Config:
     LOG_DIR = Path(os.getenv("LOG_DIR", BASE_DIR / "logs"))
     LOG_FILE = LOG_DIR / "monitor.log"
 
-    # ==================== OpenSanctions API（主数据源，推荐） ====================
+    # ==================== OFAC 官方数据源（主数据源，推荐） ====================
+    RECENT_ACTIONS_URL = "https://ofac.treasury.gov/recent-actions"
+    OFAC_BASE_URL = "https://ofac.treasury.gov"
+
+    # ==================== OpenSanctions API（备用数据源） ====================
     # OpenSanctions 每日自动同步 OFAC 数据到全球 CDN
     # 提供预计算的 delta（变更）文件，无需下载完整数据即可检测变更
     OS_DATASET = "us_ofac_sdn"
@@ -43,9 +47,8 @@ class Config:
     # entities.delta.json 是 JSONL 格式，每行一个变更操作
     OS_ENTITIES_DELTA_URL = "https://data.opensanctions.org/artifacts/{dataset}/{version}/entities.delta.json"
 
-    # ==================== OFAC 官方数据源（备用） ====================
+    # ==================== OFAC 官方数据源（备用 API） ====================
     SDN_XML_URL = "https://sanctionslistservice.ofac.treas.gov/api/publicationpreview/exports/sdn.xml"
-    RECENT_ACTIONS_URL = "https://ofac.treasury.gov/sanctions-programs-and-country-information/recent-actions"
 
     # 请求超时设置（秒）
     REQUEST_TIMEOUT = 120

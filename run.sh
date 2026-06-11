@@ -24,7 +24,7 @@ echo "============================================" | tee -a "$LOG_FILE"
 
 # 执行监控
 cd "$PROJECT_DIR"
-$PYTHON -m src.main run 2>&1 | tee -a "$LOG_FILE"
+$PYTHON -m src.main scrape 2>&1 | tee -a "$LOG_FILE"
 
 EXIT_CODE=${PIPESTATUS[0]}
 

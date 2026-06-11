@@ -1,5 +1,11 @@
-# OFAC 制裁名单每日监控 - GitHub Actions 定时任务
-# 完全免费，无需电脑开机，GitHub 服务器每天自动执行
+# OFAC 制裁行动每日监控 - GitHub Actions 定时任务
+# 数据来源: OFAC 官方 Recent Actions 页面 (https://ofac.treasury.gov/recent-actions)
+#
+# 数据库持久化策略:
+#   使用 GitHub Actions Cache 在每次运行间保留 data/ofac_monitor.db，
+#   避免每天在新 runner 上从零开始导致"首次运行"假象。
+#   每个 run 保存新缓存，restore-keys 前缀匹配找到最近一次缓存，
+#   7 天内未访问的旧缓存自动淘汰。
 
 name: OFAC 每日制裁监控
 
@@ -27,6 +33,26 @@ jobs:
       - name: 安装依赖
         run: pip install -r requirements.txt
 
+      - name: 创建数据和日志目录
+        run: mkdir -p data logs
+
+      - name: 从缓存恢复数据库
+        id: cache-db
+        uses: actions/cache/restore@v4
+        with:
+          path: data/ofac_monitor.db
+          key: ofac-db-${{ github.run_id }}
+          restore-keys: ofac-db-
+
+      - name: 数据库恢复状态
+        run: |
+          if [ -f data/ofac_monitor.db ]; then
+            echo "✅ 从缓存恢复了数据库 ($(stat -c%s data/ofac_monitor.db) bytes)"
+            echo "   已记录行动数: $(sqlite3 data/ofac_monitor.db 'SELECT COUNT(*) FROM ofac_actions;' 2>/dev/null || echo 'N/A')"
+          else
+            echo "🆕 缓存未命中，将从零开始建立基线"
+          fi
+
       - name: 创建 .env 配置文件
         run: |
           cat > .env << 'EOF'
@@ -35,5 +61,13 @@ jobs:
           LOG_DIR=./logs
           EOF
 
-      - name: 运行监控
-        run: python -m src.main run
+      - name: 运行监控 (OFAC 官方数据源)
+        id: monitor
+        run: python -m src.main scrape
+
+      - name: 保存数据库到缓存
+        if: success() || failure()
+        uses: actions/cache/save@v4
+        with:
+          path: data/ofac_monitor.db
+          key: ofac-db-${{ github.run_id }}

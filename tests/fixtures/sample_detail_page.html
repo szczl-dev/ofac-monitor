@@ -1,0 +1,69 @@
+<!--
+  OFAC 详情页测试样本 fixture
+  模拟 https://ofac.treasury.gov/recent-actions/20260605 的 HTML 结构
+
+  预期解析结果:
+    - 4 个个人
+    - 12 个实体（含 1 个中国相关: SHANGHAI QIANYE ENERGY CO., LTD.）
+    - 6 艘船只（含数字名 "MD 23"）
+    - 2 项名单修改
+-->
+<div class="field field--name-field-body">
+  <div class="field__item">
+
+    <h3>SDN List Updates</h3>
+
+    <h4>The following individuals have been added to the SDN List:</h4>
+
+    <p>
+      SMITH, John (a.k.a. JOHNNY SMITH; a.k.a. "THE ACCOUNTANT"), Tehran, Iran; DOB 15 Mar 1970; nationality Iran; Gender Male; Passport A12345678 (Iran); (individual) [IRAN-EO13902] [SDGT].<br><br>
+      CHEN, Wei, Shanghai, China; DOB 01 Jan 1980; nationality China; Gender Male; (individual) [IRAN-EO13902].<br><br>
+      AL-MASRI, Ahmed (a.k.a. "THE EGYPTIAN"), Cairo, Egypt; DOB 1985; nationality Egypt; (individual) [SDGT] (Linked To: ISLAMIC STATE).<br><br>
+      IVANOV, Dmitry, Moscow, Russia; DOB 1975; nationality Russia; (individual) [RUSSIA-EO14024].
+    </p>
+
+    <h4>The following entities have been added to the SDN List:</h4>
+
+    <p>
+      ABC TRADING LLC, Dubai, United Arab Emirates; Organization Established 2018; (entity) [IRAN-EO13902] (Linked To: SMITH, John).<br><br>
+      SHANGHAI QIANYE ENERGY CO., LTD., Shanghai, China; (entity) [IRAN-EO13902] (Linked To: MIHANDOUST, Mohammad Shakol).<br><br>
+      XYZ SHIPPING &amp; LOGISTICS INC., Monrovia, Liberia; (entity) [IRAN-EO13902].<br><br>
+      PERSIAN GULF TRADING FZE, Dubai, United Arab Emirates; (entity) [IRAN-EO13846].<br><br>
+      MOSCOW ENERGY CORP., Moscow, Russia; (entity) [RUSSIA-EO14024] (Linked To: IVANOV, Dmitry).<br><br>
+      BLACK SEA TRANSPORT LTD., Istanbul, Turkey; (entity) [RUSSIA-EO14024].<br><br>
+      MIDDLE EAST HOLDINGS LIMITED, Abu Dhabi, United Arab Emirates; (entity) [IRAN-EO13902].<br><br>
+      CASPIAN SHIPPING COMPANY, Baku, Azerbaijan; (entity) [IRAN-EO13902].<br><br>
+      GOLDEN PEARL ENTERPRISES INCORPORATED, Singapore; (entity) [IRAN-EO13902].<br><br>
+      ALPHA DEFENSE SOLUTIONS L.L.C., Islamabad, Pakistan; (entity) [SDGT].<br><br>
+      BETA CONSTRUCTION CORP., Damascus, Syria; (entity) [SYRIA].<br><br>
+      DELTA TRADING CO., LIMITED, Hong Kong; (entity) [IRAN-EO13902].
+    </p>
+
+    <h4>The following vessels have been added to the SDN List:</h4>
+
+    <p>
+      OCEAN TIGER (3EZO8) Oil Tanker Panama flag; IMO 9567890; Vessel Year Built 2010; (vessel) [IRAN-EO13902] (Linked To: ABC TRADING LLC).<br><br>
+      MD 23 (EPBQ5) LPG Tanker Liberia flag; IMO 9123456; Vessel Year Built 2008; (vessel) [IRAN-EO13902] (Linked To: PERSIAN GULF TRADING FZE).<br><br>
+      BLACK SEA VOYAGER Crude Oil Tanker Russia flag; IMO 9876543; Vessel Year Built 2015; (vessel) [RUSSIA-EO14024] (Linked To: MOSCOW ENERGY CORP.).<br><br>
+      CASPIAN WIND (UBFH3) Bulk Carrier Marshall Islands flag; IMO 8765432; Vessel Year Built 2012; (vessel) [IRAN-EO13902].<br><br>
+      GULF STAR (A8ZV5) Chemical Tanker Panama flag; IMO 7654321; Vessel Year Built 2019; (vessel) [IRAN-EO13902].<br><br>
+      OCEAN PRIDE (V7ZB4) Container Ship Liberia flag; IMO 6543210; Vessel Year Built 2011; (vessel) [IRAN-EO13902].
+    </p>
+
+    <h4>The following changes have been made to the SDN List:</h4>
+
+    <p>
+      JONES, Robert [IRAN-EO13846] -to- JONES, Robert [IRAN-EO13902] [SDGT].<br><br>
+      LEGACY TRADING CORP. [IRAN] -to- LEGACY TRADING CORP. [IRAN-EO13902].
+    </p>
+
+    <hr>
+
+    <h4>Unrelated Administrative List Updates:</h4>
+
+    <p>
+      The following administrative changes have been made: Updated passport information for DOE, Jane.
+    </p>
+
+  </div>
+</div>
