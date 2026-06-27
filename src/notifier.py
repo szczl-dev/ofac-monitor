@@ -125,6 +125,11 @@ class FeishuNotifier:
 
     def _send(self, card: dict) -> bool:
         """发送消息到飞书"""
+        payload_text = json.dumps(card, ensure_ascii=False)
+        if "OpenSanctions" in payload_text or "opensanctions" in payload_text.lower():
+            logger.error("已拦截包含 OpenSanctions 的飞书消息，备用数据源推送已禁用")
+            return False
+
         try:
             resp = requests.post(
                 self.webhook_url,
