@@ -85,7 +85,7 @@ Wants=network-online.target
 Type=oneshot
 User=your-username
 WorkingDirectory=/path/to/ofac-monitor
-ExecStart=/usr/bin/python3 -m src.main run
+ExecStart=/usr/bin/python3 -m src.main scrape
 StandardOutput=append:/path/to/ofac-monitor/logs/systemd.log
 StandardError=append:/path/to/ofac-monitor/logs/systemd_error.log
 ```

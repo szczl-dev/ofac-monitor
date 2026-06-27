@@ -71,7 +71,7 @@ ofac-monitor/
 | 命令 | 说明 |
 |------|------|
 | `python3 -m src.main scrape` | 从 OFAC 官方页面爬取最新制裁行动 (推荐，推送飞书) |
-| `python3 -m src.main run` | 使用 OpenSanctions 数据源 (备用，仅记录不推送) |
+| `python3 -m src.main run` | 已禁用的旧入口，不会抓取或推送 |
 | `python3 -m src.main test` | 发送测试消息到飞书 |
 | `python3 -m src.main status` | 查看监控状态 |
 | `bash run.sh` | Shell 脚本封装，带日志记录 |

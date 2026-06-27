@@ -17,8 +17,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.config import Config
 from src.db import Database
-from src.fetcher import Fetcher
-from src.parser_opensanctions import OpenSanctionsParser
 from src.summarizer import Summarizer
 from src.notifier import FeishuNotifier
 from src.scraper import OFACScraper, summarize_detail_for_push
@@ -344,112 +342,17 @@ def _build_no_changes_report(total_count: int, check_datetime: str) -> str:
 
 def cmd_run():
     """
-    运行一次监控检查 (OpenSanctions 数据源 - 仅记录，不推送)
+    兼容旧部署入口。
 
-    流程:
-      1. 获取 OpenSanctions index.json → 判断是否有更新
-      2. 如有更新 → 下载 entities.delta.json → 解析变更
-      3. 保存到数据库（不推送到飞书）
-
-    注意: OpenSanctions 数据源已关闭推送，仅保留数据采集和记录。
-          推送仅通过 OFAC 官方 Recent Actions (scrape 命令) 进行。
+    OpenSanctions 数据源已禁用。保留 run 命令只是为了让旧的 cron/systemd
+    不会误触发备用数据源；真正监控和推送只通过 scrape 命令进行。
     """
     logger = logging.getLogger("main")
     logger.info("=" * 60)
-    logger.info("OFAC 制裁名单监控 - 备用数据源 (OpenSanctions) [仅记录，不推送]")
+    logger.info("OpenSanctions 数据源已禁用；请使用 scrape 命令")
     logger.info("=" * 60)
-
-    try:
-        Config.validate()
-    except ValueError as e:
-        logger.error(str(e))
-        return 1
-
-    fetcher = Fetcher()
-    parser = OpenSanctionsParser()
-    summarizer = Summarizer()
-
-    check_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    # ==================== 第一步：获取数据集索引 ====================
-    logger.info("[1/3] 获取 OpenSanctions 数据集索引...")
-    try:
-        index_info = fetcher.fetch_index()
-    except Exception as e:
-        error_msg = f"获取数据集索引失败: {e}"
-        logger.error(error_msg)
-        return 1
-
-    version = index_info.get("version", "")
-    last_change = index_info.get("last_change", "")
-    entity_count = index_info.get("entity_count", 0)
-    target_count = index_info.get("target_count", 0)
-
-    logger.info(f"  版本: {version}")
-    logger.info(f"  最后变更: {last_change}")
-    logger.info(f"  实体数: {entity_count:,}  制裁目标: {target_count:,}")
-
-    # ==================== 第二步：检查是否有更新 ====================
-    logger.info("[2/3] 检查是否需要获取变更...")
-    with Database() as db:
-        db.init_tables()
-        prev_version = db.get_latest_version()
-        is_first_run = prev_version is None
-
-    if prev_version == version:
-        logger.info(f"  版本未变化 ({version})，无需更新")
-        with Database() as db:
-            db.save_monitor_state(
-                check_date, version, last_change,
-                entity_count, target_count, changes_found=0
-            )
-        logger.info("✅ 监控任务完成 (无变化，未推送)")
-        return 0
-
-    if is_first_run:
-        logger.info(f"  首次运行，建立基线 (版本: {version})")
-    else:
-        logger.info(f"  检测到新版本: {prev_version} → {version}")
-
-    # ==================== 第三步：获取 delta 变更并保存 ====================
-    logger.info("[3/3] 获取实体变更数据...")
-    try:
-        delta_changes = fetcher.fetch_entities_delta(version)
-    except Exception as e:
-        error_msg = f"获取 delta 变更数据失败: {e}"
-        logger.error(error_msg)
-        return 1
-
-    changes_for_db, stats = parser.parse_delta_changes(
-        delta_changes, check_date, version
-    )
-
-    logger.info("  保存变更记录到数据库...")
-    with Database() as db:
-        if changes_for_db:
-            db.save_changes_batch(changes_for_db)
-            logger.info(f"  已保存 {len(changes_for_db)} 条变更记录")
-
-        db.save_monitor_state(
-            check_date, version, last_change,
-            entity_count, target_count,
-            changes_found=stats["total"],
-            delta_processed=1,
-        )
-
-    # 仅记录日志，不推送
-    if stats["total"] > 0:
-        logger.info(
-            f"📊 检测到 {stats['total']} 条变更 "
-            f"(新增 {stats.get('added', 0)}, "
-            f"修改 {stats.get('modified', 0)}, "
-            f"移除 {stats.get('removed', 0)})"
-        )
-        logger.info("ℹ️ OpenSanctions 数据源已关闭推送，仅记录到数据库")
-    else:
-        logger.info("ℹ️ 无变更 (OpenSanctions 数据源已关闭推送)")
-
-    logger.info("✅ 监控任务完成 (未推送)")
+    logger.warning("跳过执行：OpenSanctions 备用流程已彻底关闭，不会抓取或推送")
+    logger.info("如需执行每日监控，请运行: python3 -m src.main scrape")
     return 0
 
 
@@ -519,7 +422,7 @@ def cmd_status():
         print()
         print("命令参考:")
         print("  python3 -m src.main scrape   运行官方数据源监控 (推荐)")
-        print("  python3 -m src.main run      运行 OpenSanctions 监控 (备用)")
+        print("  python3 -m src.main run      已禁用的旧入口 (不会抓取或推送)")
         print("  python3 -m src.main test     测试飞书推送")
         print("  python3 -m src.main status   查看此状态")
 
@@ -537,7 +440,7 @@ def main():
         epilog="""
 使用示例:
   python3 -m src.main scrape   从 OFAC 官方页面爬取最新制裁行动 (推荐，推送飞书)
-  python3 -m src.main run      使用 OpenSanctions 数据源 (备用，仅记录不推送)
+  python3 -m src.main run      已禁用的旧入口 (不会抓取或推送)
   python3 -m src.main test     发送测试消息到飞书
   python3 -m src.main status   查看监控状态
         """,
@@ -548,7 +451,7 @@ def main():
         choices=["scrape", "run", "test", "status"],
         default="scrape",
         nargs="?",
-        help="执行命令: scrape(OFAC官方数据源,推送), run(OpenSanctions备用,仅记录不推送), test(测试推送), status(查看状态)",
+        help="执行命令: scrape(OFAC官方数据源,推送), run(已禁用旧入口), test(测试推送), status(查看状态)",
     )
 
     args = parser.parse_args()
