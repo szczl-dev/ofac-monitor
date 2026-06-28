@@ -129,10 +129,8 @@ def cmd_scrape():
                     "pushed": 1,
                 })
 
-        report = _build_first_run_report(all_actions, check_datetime)
-        logger.info("[5/5] 推送首次运行报告...")
-        success = notifier.send_status_report(report)
-        return 0 if success else 1
+        logger.info("[5/5] 首次运行基线已建立，不发送状态报告")
+        return 0
 
     # 无新增且无补推
     if not new_urls and not retry_urls:
@@ -150,10 +148,8 @@ def cmd_scrape():
                 len(all_actions), len(all_actions),
                 changes_found=0, delta_processed=0,
             )
-        report = _build_no_changes_report(len(all_actions), check_datetime)
-        logger.info("[5/5] 推送状态报告...")
-        success = notifier.send_status_report(report)
-        return 0 if success else 1
+        logger.info("[5/5] 无新增行动，不发送状态报告")
+        return 0
 
     # 有新增或补推，但分页不完整 — 记录警告，仍然处理已有数据
     if pagination_error:
